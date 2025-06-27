@@ -121,17 +121,6 @@ if __name__ == "__main__":
 
 - Ensures the honeypot runs when the script is executed directly.
 
----
-
-### 📂 File Structure Summary
-
-- `ssh_honeypot.py`: Main script.
-- `ssh_host_key`: RSA private key used by Paramiko. Required.
-- `audit.log`: Session activity log.
-- `cmd_audit.log`: Credential and command log.
-
----
-
 ### ✅ Summary
 
 This script offers a complete simulation of an SSH server to:
