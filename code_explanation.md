@@ -128,6 +128,11 @@ This script offers a complete simulation of an SSH server to:
 - Capture and analyze attacker behavior.
 - Log credentials and shell activity.
 - Serve as a research or defensive cybersecurity tool.
+- 
+
+# 📄 License
+MIT License
+
 
 > ⚠️ **Note:** This honeypot accepts all login attempts and simulates full root access. It should be deployed in a **controlled and isolated environment only**.
 
