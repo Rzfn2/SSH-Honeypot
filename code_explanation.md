@@ -1,25 +1,28 @@
-## 🔍 Code Explanation: `ssh_honeypot.py`
+## 🔍 Full Code Explanation: `ssh_honeypot.py`
 
-This Python script implements a fully functional SSH honeypot using the `paramiko` library. The purpose of the honeypot is to attract malicious actors, log their login attempts and commands, and simulate a fake shell environment that deceives them into thinking they’ve gained access to a legitimate system.
+This script is a fake SSH server honeypot written in Python using the Paramiko library. It is designed to mimic a real Linux shell experience for attackers and log all activity for threat intelligence purposes.
 
 ---
 
 ### 📦 Modules & Imports
 
 ```python
-import logging, socket, paramiko, threading
+import logging
+import socket
+import paramiko
+import threading
 from logging.handlers import RotatingFileHandler
 ```
 
-- **paramiko**: Handles SSH server functionality.
-- **logging**: Records attacker interaction and session details.
-- **socket**: Creates TCP socket to listen for SSH connections.
-- **threading**: Handles multiple simultaneous SSH connections.
-- **RotatingFileHandler**: Keeps log files from growing indefinitely.
+* **paramiko**: Core SSH server functionality.
+* **logging**: Captures shell and login activity.
+* **threading**: Allows handling multiple SSH clients concurrently.
+* **socket**: Listens for SSH connections.
+* **RotatingFileHandler**: Prevents log files from growing indefinitely.
 
 ---
 
-### ⚙️ Constants & Configuration
+### ⚙️ Configuration & Constants
 
 ```python
 HOST_KEY = paramiko.RSAKey(filename='ssh_host_key')
@@ -27,108 +30,131 @@ BIND_ADDR = '0.0.0.0'
 PORT = 2222
 ```
 
-- `HOST_KEY`: Load the SSH RSA host key. You must generate this file manually.
-- `BIND_ADDR`: Binds the SSH server to all available interfaces.
-- `PORT`: The server listens on port 2222 to avoid conflict with real SSH.
-
----
-
-### 🧾 Log Format Setup
+* Loads the SSH host key.
+* Listens on all interfaces on port 2222.
 
 ```python
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-LOG_FORMAT = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', datefmt=DATE_FORMAT)
+LOG_FORMAT = logging.Formatter(...)
 ```
 
-- Customizes timestamp and format for all log entries.
+* Sets up logging format and timestamp style.
 
 ---
 
-### 🪵 Logging Handlers
+### 🪵 Logging Setup
+
+Two separate loggers:
 
 ```python
 Honey_logger = logging.getLogger('Honey_logger')
-Honey_logger.setLevel(logging.INFO)
-...
 Honey_logger_creds = logging.getLogger('Honey_logger_creds')
-Honey_logger_creds.setLevel(logging.INFO)
 ```
 
-- `Honey_logger`: Tracks session-level events (e.g., connection start, errors).
-- `Honey_logger_creds`: Logs credentials and commands.
-- `RotatingFileHandler`: Creates `audit.log` and `cmd_audit.log` with a size cap of 5 KB and up to 3 backups.
+* `audit.log`: Tracks session activity.
+* `cmd_audit.log`: Logs usernames, passwords, and shell commands.
+
+Both use `RotatingFileHandler` to avoid uncontrolled growth.
 
 ---
 
-### 💻 Simulated Shell Logic
+### 💻 Honey Shell Function
 
 ```python
 def Honey_shell(channel, client_ip):
 ```
 
-- Sends welcome banner and prompt (`Abdullah-BNR$`).
-- Handles attacker input line-by-line:
-  - Commands like `whoami`, `id`, `ls`, `pwd`, and `uname -a` return realistic outputs.
-  - Unrecognized input returns: `bash: <cmd>: command not found`
-  - Command is logged before the response is returned.
-- Exit commands (`exit`, `logout`, `quit`) terminate the session.
-- Errors during shell handling are logged.
+* Sends a welcome banner and command prompt (`Abdullah-BNR$`).
+* Captures keystrokes one at a time.
+* Buffers user input until `Enter` is pressed.
+* Handles:
+
+  * **Backspace**: deletes last char in buffer.
+  * **Arrow keys**: ignored to avoid escape sequence clutter.
+  * **Line submission**: logged and processed.
+
+#### Fake Command Handling
+
+```python
+fake_responses = {
+    "ls": "backup/  secrets.txt  logs/",
+    "cat secrets.txt": "root:toor\nadmin:admin123",
+    ...
+}
+```
+
+* Predefined responses for specific commands.
+* If the command isn't defined, returns: `bash: <cmd>: command not found`
+
+Each response is followed by the prompt again.
 
 ---
 
-### 🧠 Class: `HoneySSHServer`
+### 🔐 SSH Server Logic
 
 ```python
 class HoneySSHServer(paramiko.ServerInterface):
 ```
 
-- This class defines the custom SSH server behavior.
-- `__init__`: Stores the IP of the connecting client.
-- `check_channel_request`: Accepts only `session` channels (standard shell).
-- `check_auth_password`: Accepts **any** username/password and logs them.
+This class accepts and handles authentication + session requests:
+
+* `check_channel_request`: Only allows session channels.
+* `check_auth_password`: Always returns successful login and logs the credentials.
+* `check_channel_shell_request`: Accepts shell sessions.
+* `check_channel_pty_request`: Accepts PTY requests (needed for proper SSH client behavior).
 
 ---
 
-### 🔄 Handling New Connections
+### 🔁 Connection Handler
 
 ```python
 def handle_connection(client, addr):
 ```
 
-- Creates an SSH Transport object.
-- Adds the SSH host key (`ssh_host_key`).
-- Starts the SSH server with `HoneySSHServer`.
-- If authentication succeeds, opens a channel and starts the shell.
-- Errors are logged if the connection fails.
-- Ensures socket is closed after use.
+* Sets up SSH transport with the provided `client` socket.
+* Loads the `HOST_KEY`.
+* Attaches the `HoneySSHServer` class.
+* Accepts and hands the connection to `Honey_shell()`.
+* Cleans up the socket.
 
 ---
 
-### 🚀 Start the SSH Server
+### 🚀 Entry Point
 
 ```python
 def start_ssh_server():
 ```
 
-- Creates a socket, binds to the defined IP and port.
-- Listens for incoming connections.
-- For each connection, spawns a thread that runs `handle_connection()`.
+* Binds a socket to port 2222.
+* Accepts incoming connections.
+* For each, launches a new thread with `handle_connection()`.
 
 ```python
 if __name__ == "__main__":
     start_ssh_server()
 ```
 
-- Ensures the honeypot runs when the script is executed directly.
+---
 
-### ✅ Summary
+### 🧪 Final Behavior
 
-This script offers a complete simulation of an SSH server to:
+* Attacker connects via SSH on port 2222.
+* Any username/password is accepted.
+* A fake Linux shell is shown.
+* Commands like `ls`, `pwd`, `cat` are faked.
+* All interaction is logged.
 
-- Capture and analyze attacker behavior.
-- Log credentials and shell activity.
-- Serve as a research or defensive cybersecurity tool.
-- 
+---
+
+### 📌 Summary
+
+This honeypot mimics a Linux shell well enough to fool basic attackers and bots. It logs credentials and behavior for analysis, while being safe (no real shell access).
+
+✅ PTY support is enabled.
+✅ Echo, backspace, and newline behave normally.
+✅ You can enhance it by adding more fake commands or alerts.
+
+---
 
 # 📄 License
 MIT License
