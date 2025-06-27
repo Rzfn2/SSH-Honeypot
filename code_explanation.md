@@ -1,4 +1,4 @@
-## 🔍 Full Code Explanation: `ssh_honeypot.py`
+## 🔍 Code Explanation: `ssh_honeypot.py`
 
 This Python script implements a fully functional SSH honeypot using the `paramiko` library. The purpose of the honeypot is to attract malicious actors, log their login attempts and commands, and simulate a fake shell environment that deceives them into thinking they’ve gained access to a legitimate system.
 
