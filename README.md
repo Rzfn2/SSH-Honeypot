@@ -1,4 +1,4 @@
-# 🐍 SSH Honeypot -
+# 🐍 SSH Honeypot 
 
 A realistic SSH honeypot built using Python and Paramiko, designed to simulate an interactive SSH server environment. This honeypot captures login attempts and commands entered by attackers, providing valuable insights into unauthorized access behavior.
 
@@ -62,6 +62,8 @@ root
 Abdullah-BNR$ ls
 backup/  secrets.txt  logs/
 ```
+![image](https://github.com/user-attachments/assets/a1af76ad-b286-4f19-93a6-51b210b4255a)
+
 ---
 
 ### 📄 Logging Overview
