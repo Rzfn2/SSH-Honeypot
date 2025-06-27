@@ -79,11 +79,10 @@ This project is for educational and research purposes only. Deploying a honeypot
 ## 👨‍💻 Author
 Abdullah Banwair
 
-Feel free to contribute, fork, or suggest improvements!
+---
 
-
-
-
+# 📄 License
+MIT License
 
 
 
