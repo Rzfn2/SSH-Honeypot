@@ -62,8 +62,6 @@ root
 Abdullah-BNR$ ls
 backup/  secrets.txt  logs/
 ```
-![image](https://github.com/user-attachments/assets/a1af76ad-b286-4f19-93a6-51b210b4255a)
-
 ---
 
 ### 📄 Logging Overview
