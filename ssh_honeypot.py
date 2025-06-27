@@ -5,7 +5,7 @@ import threading
 from logging.handlers import RotatingFileHandler
 
 # === Constants ===
-HOST_KEY = paramiko.RSAKey(filename='ssh_host_key')  # Make sure this file exists
+HOST_KEY = paramiko.RSAKey(filename='ssh_host_key')
 BIND_ADDR = '0.0.0.0'
 PORT = 2222
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -35,28 +35,59 @@ def Honey_shell(channel, client_ip):
     fake_responses = {
         "whoami": "root",
         "id": "uid=0(root) gid=0(root) groups=0(root)",
-        "ls": "backup/ secrets.txt logs/",
+        "ls": "backup/  secrets.txt  logs/",
         "pwd": "/root",
         "uname -a": "Linux Abdullah-BNR 5.15.0 x86_64 GNU/Linux",
+        "cat secrets.txt": "root:toor\nadmin:admin123",
+        "strings secrets.txt": "CONFIDENTIAL\nadmin_pass\ninternal_key",
+        "cd ..": "",
+        "cd /": "",
+        "clear": "\033c",
     }
 
-    channel.send(b"Welcome to Abdullah-BNR\n")
-    channel.send(prompt.encode())
+    channel.send(b"Welcome to Abdullah-BNR\r\n")
+    channel.send((prompt).encode())
 
     while True:
         try:
-            cmd = channel.recv(1024).decode("utf-8", errors="ignore").strip()
-            if not cmd:
+            buffer = ""
+            while True:
+                byte = channel.recv(1).decode("utf-8", errors="ignore")
+                if not byte:
+                    return
+
+                # Handle Enter key
+                if byte in ["\r", "\n"]:
+                    cmd = buffer.strip()
+                    channel.send("\r\n")
+                    break
+
+                # Handle Backspace
+                if byte == '\x7f':
+                    if buffer:
+                        buffer = buffer[:-1]
+                        channel.send(b"\b \b")
+                    continue
+
+                # Ignore arrow keys (they begin with ESC)
+                if byte == '\x1b':
+                    channel.recv(2)
+                    continue
+
+                buffer += byte
+                channel.send(byte.encode())
+
+            if not buffer:
                 break
 
             Honey_logger_creds.info(f"{ip}:{port} >> {cmd}")
 
             if cmd.lower() in ["exit", "logout", "quit"]:
-                channel.send(b"Goodbye\n")
+                channel.send(b"Goodbye\r\n")
                 break
 
             response = fake_responses.get(cmd, f"bash: {cmd}: command not found")
-            channel.send((response + "\n" + prompt).encode())
+            channel.send((response + "\r\n" + prompt).encode())
 
         except Exception as e:
             Honey_logger.error(f"{ip}:{port} >> Shell error: {e}")
@@ -67,8 +98,8 @@ def Honey_shell(channel, client_ip):
 # === SSH Server Logic ===
 class HoneySSHServer(paramiko.ServerInterface):
     def __init__(self, client_ip):
-        self.event = threading.Event()
         self.client_ip = client_ip
+        self.event = threading.Event()
 
     def check_channel_request(self, kind, chanid):
         if kind == 'session':
@@ -79,6 +110,12 @@ class HoneySSHServer(paramiko.ServerInterface):
         ip, port = self.client_ip
         Honey_logger_creds.info(f"{ip}:{port} >> SSH Login: {username}/{password}")
         return paramiko.AUTH_SUCCESSFUL
+
+    def check_channel_shell_request(self, channel):
+        return True
+
+    def check_channel_pty_request(self, channel, term, width, height, pixelwidth, pixelheight, modes):
+        return True
 
 # === Client Handler ===
 def handle_connection(client, addr):
@@ -117,3 +154,4 @@ def start_ssh_server():
 
 if __name__ == "__main__":
     start_ssh_server()
+
