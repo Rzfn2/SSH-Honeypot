@@ -75,10 +75,11 @@ backup/  secrets.txt  logs/
 ### ⚠️ Disclaimer
 This project is for educational and research purposes only. Deploying a honeypot on the internet may attract real attackers. Use responsibly and ensure your environment is secure.
 
----
 ## 👨‍💻 Author
-Abdullah Banwair
 
+Made by [Abdullah Banwair](https://github.com/Rzfn2) — feel free to reach out!
+
+Suggestions, contributions, and pull requests are welcome!
 ---
 
 # 📄 License
